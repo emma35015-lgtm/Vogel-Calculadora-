@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexTech Industries — Calculadora de Transporte</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0A0F1E;
+      --panel: #0F1C30;
+      --panel2: #0D2040;
+      --panel3: #091525;
+      --text: #E8F0FF;
+      --text-dim: #6A85AA;
+      --cyan: #00D4FF;
+      --orange: #FF8C00;
+      --green: #00FF88;
+      --red: #FF4466;
+      --yellow: #FFD700;
+      --border: #1A3050;
+      --border2: #243E5E;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    /* Stars */
+    #stars {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle var(--dur, 3s) infinite var(--delay, 0s);
+    }
+    @keyframes twinkle {
+      0%,100% { opacity: var(--min-op, 0.2); }
+      50% { opacity: var(--max-op, 0.8); }
+    }
+    /* Layout */
+    header {
+      position: relative; z-index: 1;
+      background: linear-gradient(180deg, #060B17 0%, #0A0F1E 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 40px 24px;
+      text-align: center;
+    }
+    .header-tag {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; letter-spacing: 4px; font-weight: 400;
+      color: var(--cyan); text-transform: uppercase; margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(22px, 4vw, 38px); font-weight: 900;
+      color: var(--text); letter-spacing: 2px; line-height: 1.1;
+    }
+    h1 span { color: var(--cyan); }
+    .header-sub {
+      margin-top: 8px; color: var(--text-dim); font-size: 13px;
+      letter-spacing: 1px;
+    }
+    .header-team {
+      margin-top: 12px; font-size: 11px; color: var(--text-dim);
+    }
+    main {
+      position: relative; z-index: 1;
+      max-width: 1300px; margin: 0 auto;
+      padding: 32px 20px 120px;
+    }
+    /* Cards */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 13px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .step-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--cyan); color: #000;
+      font-size: 12px; font-weight: 700; font-family: 'Orbitron', monospace;
+      flex-shrink: 0;
+    }
+    /* Inputs */
+    label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 1px; }
+    input[type="number"], input[type="text"] {
+      background: var(--panel3);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 10px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="number"]:focus, input[type="text"]:focus {
+      border-color: var(--cyan);
+    }
+    input[type="number"] { width: 90px; text-align: center; }
+    .form-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.wide { flex: 1; min-width: 200px; }
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer;
+      font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--cyan); color: #000;
+    }
+    .btn-primary:hover { background: #00EEFF; box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+    .btn-secondary {
+      background: transparent; color: var(--cyan);
+      border: 1px solid var(--cyan);
+    }
+    .btn-secondary:hover { background: rgba(0,212,255,0.1); }
+    .btn-vogel { background: var(--orange); color: #000; }
+    .btn-vogel:hover { box-shadow: 0 0 20px rgba(255,140,0,0.5); }
+    .btn-success { background: var(--green); color: #000; }
+    .btn-success:hover { box-shadow: 0 0 20px rgba(0,255,136,0.5); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-sm { padding: 7px 14px; font-size: 10px; }
+    .btn-lg { padding: 14px 32px; font-size: 13px; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 10px; }
+    /* Input table */
+    .table-scroll { overflow-x: auto; }
+    table.input-table {
+      border-collapse: collapse; min-width: 100%;
+    }
+    table.input-table th, table.input-table td {
+      padding: 6px; text-align: center; border: 1px solid var(--border2);
+    }
+    table.input-table th {
+      background: #0A1E3A; color: var(--cyan);
+      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    table.input-table td input[type="number"] {
+      width: 70px; padding: 6px; font-size: 13px;
+    }
+    table.input-table td.supply-td { background: rgba(0,255,136,0.05); }
+    table.input-table td.demand-td { background: rgba(0,212,255,0.05); }
+    table.input-table td.supply-td input, table.input-table td.demand-td input {
+      border-color: #1E5040;
+    }
+    /* Balance indicator */
+    .balance-indicator {
+      margin-top: 14px; padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; display: flex; align-items: center; gap: 10px;
+      font-weight: 500;
+    }
+    .balance-ok { background: rgba(0,255,136,0.1); border: 1px solid var(--green); color: var(--green); }
+    .balance-warn { background: rgba(255,68,102,0.1); border: 1px solid var(--red); color: var(--red); }
+    /* Tabs */
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px;
+    }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 8px; border: 1px solid var(--border2);
+      background: var(--panel3); color: var(--text-dim);
+      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+    }
+    .tab-btn:hover { border-color: var(--border); color: var(--text); }
+    .tab-btn.active-vogel { background: rgba(255,140,0,0.15); border-color: var(--orange); color: var(--orange); }
+    .tab-btn.active-eno { background: rgba(255,68,102,0.15); border-color: var(--red); color: var(--red); }
+    .tab-btn.active-cm { background: rgba(0,255,136,0.15); border-color: var(--green); color: var(--green); }
+    .tab-btn.active-comp { background: rgba(0,212,255,0.15); border-color: var(--cyan); color: var(--cyan); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    /* Iteration cards */
+    .iter-card {
+      background: var(--panel3); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .iter-header {
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .iter-num {
+      font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+      color: var(--orange); letter-spacing: 2px;
+    }
+    .iter-info { font-size: 12px; color: var(--text-dim); }
+    .iter-body { padding: 14px; overflow-x: auto; }
+    /* Iter table */
+    table.iter-table {
+      border-collapse: collapse; font-size: 12px;
+    }
+    table.iter-table th, table.iter-table td {
+      padding: 5px 8px; text-align: center;
+      border: 1px solid var(--border2); min-width: 52px;
+    }
+    table.iter-table th {
+      background: #0A1E3A; color: var(--cyan);
+      font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 1px;
+    }
+    table.iter-table td.inactive {
+      background: #0A0F18; color: #2A3A50;
+      text-decoration: line-through;
+    }
+    table.iter-table td.selected-row { background: rgba(255,215,0,0.1); }
+    table.iter-table td.selected-col { background: rgba(255,215,0,0.1); }
+    table.iter-table td.chosen { background: rgba(0,255,136,0.2) !important; color: var(--green); font-weight: 700; }
+    table.iter-table td.penalty-row { background: rgba(255,140,0,0.1); color: var(--orange); font-weight: 600; }
+    table.iter-table td.penalty-col { background: rgba(255,140,0,0.1); color: var(--orange); font-weight: 600; }
+    table.iter-table td.max-penalty { background: rgba(255,215,0,0.25) !important; color: var(--yellow); font-weight: 700; }
+    table.iter-table th.supply-h { color: var(--green); }
+    table.iter-table th.demand-h { color: var(--cyan); }
+    table.iter-table td.supply-val { color: var(--green); }
+    table.iter-table td.demand-val { color: var(--cyan); }
+    table.iter-table td.origin-label { background: #0A1E3A; color: var(--text); text-align: left; font-weight: 500; white-space: nowrap; }
+    /* Result tables */
+    table.result-table {
+      border-collapse: collapse; font-size: 13px; min-width: 100%;
+    }
+    table.result-table th, table.result-table td {
+      padding: 9px 14px; text-align: center;
+      border: 1px solid var(--border2);
+    }
+    table.result-table th {
+      background: #0A1E3A; color: var(--text);
+      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px;
+    }
+    table.result-table td.assigned { background: rgba(255,215,0,0.12); font-weight: 600; }
+    table.result-table td.zero { color: var(--text-dim); }
+    table.result-table td.origin-label { text-align: left; background: #0A1E3A; white-space: nowrap; }
+    table.result-table td.dummy { opacity: 0.5; font-style: italic; }
+    /* Summary table */
+    table.summary-table {
+      border-collapse: collapse; font-size: 13px; width: 100%;
+    }
+    table.summary-table th, table.summary-table td {
+      padding: 10px 16px; text-align: center; border: 1px solid var(--border2);
+    }
+    table.summary-table th {
+      background: #0A1E3A; color: var(--text);
+      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 1px;
+    }
+    table.summary-table td:first-child { text-align: left; color: var(--text-dim); }
+    table.summary-table .total-row td { font-weight: 700; color: var(--yellow); font-size: 15px; }
+    /* Comparison */
+    table.comp-table {
+      border-collapse: collapse; width: 100%;
+    }
+    table.comp-table th, table.comp-table td {
+      padding: 14px 20px; text-align: center; border: 1px solid var(--border2);
+      font-size: 14px;
+    }
+    table.comp-table th {
+      font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px;
+      background: #0A1E3A;
+    }
+    table.comp-table th.vogel-h { color: var(--orange); }
+    table.comp-table th.eno-h { color: var(--red); }
+    table.comp-table th.cm-h { color: var(--green); }
+    table.comp-table td.best { background: rgba(0,255,136,0.15); color: var(--green); font-weight: 700; font-size: 18px; }
+    table.comp-table td.cost { font-size: 18px; font-weight: 600; }
+    /* Steps list */
+    .steps-list { list-style: none; }
+    .steps-list li {
+      padding: 8px 14px; margin-bottom: 6px;
+      background: var(--panel3); border: 1px solid var(--border);
+      border-radius: 6px; font-size: 12px; color: var(--text-dim);
+      display: flex; gap: 10px; align-items: baseline;
+    }
+    .steps-list li .step-n {
+      font-family: 'Orbitron', monospace; font-size: 9px;
+      color: var(--cyan); flex-shrink: 0; font-weight: 700;
+    }
+    .steps-list li strong { color: var(--text); }
+    /* Method section title */
+    .method-title {
+      font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .method-title.vogel { color: var(--orange); }
+    .method-title.eno { color: var(--red); }
+    .method-title.cm { color: var(--green); }
+    .method-title.comp { color: var(--cyan); }
+    .section-sub {
+      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-dim); margin: 20px 0 10px;
+    }
+    /* Info box */
+    .info-box {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .info-cyan { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.3); color: var(--cyan); }
+    .info-orange { background: rgba(255,140,0,0.08); border: 1px solid rgba(255,140,0,0.3); color: var(--orange); }
+    .info-green { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+    .info-red { background: rgba(255,68,102,0.08); border: 1px solid rgba(255,68,102,0.3); color: var(--red); }
+    /* Export button (floating) */
+    #export-btn-wrapper {
+      position: fixed; bottom: 24px; right: 24px; z-index: 100;
+      display: none;
+    }
+    #export-btn-wrapper .btn {
+      box-shadow: 0 4px 24px rgba(0,255,136,0.4);
+    }
+    /* Total cost highlight */
+    .total-cost-box {
+      margin-top: 16px; padding: 16px 24px;
+      background: rgba(255,215,0,0.05); border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 10px; display: inline-block;
+    }
+    .total-cost-box .label { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 4px; }
+    .total-cost-box .value { font-family: 'Orbitron', monospace; font-size: 26px; font-weight: 700; color: var(--yellow); }
+    /* Conclusion */
+    .conclusion-box {
+      margin-top: 20px; padding: 18px 24px;
+      border-radius: 10px; text-align: center;
+    }
+    .conclusion-box.good { background: rgba(0,255,136,0.08); border: 2px solid var(--green); }
+    .conclusion-box .conclusion-text { font-size: 15px; color: var(--text); line-height: 1.5; }
+    .conclusion-box .conclusion-text strong { color: var(--green); }
+    /* Collapsible iterations */
+    .iter-toggle { cursor: pointer; user-select: none; }
+    .iter-toggle:hover .iter-num { text-decoration: underline; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    /* Legend */
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; font-size: 11px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-box { width: 14px; height: 14px; border-radius: 3px; }
+    /* Divider */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    /* Scrollable iterations section */
+    .iters-container { max-height: none; }
+    /* Glow accents */
+    .glow-cyan { text-shadow: 0 0 10px var(--cyan); }
+    .glow-orange { text-shadow: 0 0 10px var(--orange); }
+    /* Responsive */
+    @media (max-width: 600px) {
+      header { padding: 20px 16px; }
+      main { padding: 20px 12px 100px; }
+      .card { padding: 18px 14px; }
+    }
+    /* Dummy row/col styling */
+    tr.dummy-row td, td.dummy-col { opacity: 0.55; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<header>
+  <div class="header-tag">NexTech Industries · Métodos Cuantitativos</div>
+  <h1>Calculadora de <span>Transporte</span></h1>
+  <div class="header-sub">Optimización de rutas logísticas · Vogel · Esquina Noroeste · Costo Mínimo</div>
+  <div class="header-team">Emmanuel · Jessica · Regina G. · Regina E.</div>
+</header>
+
+<main>
+  <!-- STEP 1: Dimensions -->
+  <div class="card" id="card-step1">
+    <div class="card-title"><span class="step-badge">1</span> Configurar Dimensiones</div>
+    <div class="form-row" style="margin-bottom:18px">
+      <div class="form-group">
+        <label>ORÍGENES (m)</label>
+        <input type="number" id="inp-m" value="2" min="1" max="10">
+      </div>
+      <div class="form-group">
+        <label>DESTINOS (n)</label>
+        <input type="number" id="inp-n" value="3" min="1" max="10">
+      </div>
+      <div class="form-group wide">
+        <label>NOMBRES DE ORÍGENES (separados por coma)</label>
+        <input type="text" id="inp-origins" placeholder="Origen 1, Origen 2, ...">
+      </div>
+      <div class="form-group wide">
+        <label>NOMBRES DE DESTINOS (separados por coma)</label>
+        <input type="text" id="inp-dests" placeholder="Destino 1, Destino 2, ...">
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="generateTable()">Generar Tabla</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadExample(1)">Ejemplo 1 (2×3)</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadExample(2)">Ejemplo 2 (4×5 desbalanceado)</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Data entry -->
+  <div class="card" id="card-step2" style="display:none">
+    <div class="card-title"><span class="step-badge">2</span> Captura de Datos</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px">
+      Ingresa los <strong style="color:var(--text)">costos unitarios</strong> en las celdas centrales,
+      la <strong style="color:var(--green)">oferta</strong> de cada origen en la última columna,
+      y la <strong style="color:var(--cyan)">demanda</strong> de cada destino en la última fila.
+    </p>
+    <div class="table-scroll" id="table-container"></div>
+    <div class="balance-indicator" id="balance-indicator" style="margin-top:14px">…</div>
+    <div style="margin-top:18px" class="btn-group">
+      <button class="btn btn-vogel" onclick="solve()">▶ Resolver</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetAll()">✕ Reiniciar</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Results -->
+  <div id="card-step3" style="display:none">
+    <div id="balance-note" class="info-box" style="display:none"></div>
+    <div class="card">
+      <div class="tabs" id="method-tabs">
+        <button class="tab-btn" onclick="switchTab('vogel')" id="tab-vogel">🟠 Vogel</button>
+        <button class="tab-btn" onclick="switchTab('eno')" id="tab-eno">🔴 Esq. Noroeste</button>
+        <button class="tab-btn" onclick="switchTab('cm')" id="tab-cm">🟢 Costo Mínimo</button>
+        <button class="tab-btn" onclick="switchTab('comp')" id="tab-comp">🔵 Comparativa</button>
+      </div>
+      <!-- Vogel -->
+      <div class="tab-content" id="tab-content-vogel">
+        <div class="method-title vogel">⚡ Aproximación de Vogel</div>
+        <div id="vogel-content"></div>
+      </div>
+      <!-- ENO -->
+      <div class="tab-content" id="tab-content-eno">
+        <div class="method-title eno">↘ Esquina Noroeste (ENO)</div>
+        <div id="eno-content"></div>
+      </div>
+      <!-- CM -->
+      <div class="tab-content" id="tab-content-cm">
+        <div class="method-title cm">★ Costo Mínimo</div>
+        <div id="cm-content"></div>
+      </div>
+      <!-- Comparison -->
+      <div class="tab-content" id="tab-content-comp">
+        <div class="method-title comp">◈ Comparativa de Métodos</div>
+        <div id="comp-content"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Floating export button -->
+<div id="export-btn-wrapper">
+  <button class="btn btn-success btn-lg" onclick="exportToExcel()">⬇ Descargar Excel</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// STARS BACKGROUND
+// ─────────────────────────────────────────
+(function() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.cssText = `
+      left:${Math.random()*100}%;top:${Math.random()*100}%;
+      width:${size}px;height:${size}px;
+      --dur:${2+Math.random()*4}s;--delay:${Math.random()*4}s;
+      --min-op:${0.05+Math.random()*0.2};--max-op:${0.5+Math.random()*0.5};
+    `;
+    container.appendChild(s);
+  }
+})();
+
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+const state = {
+  m: 0, n: 0,
+  originNames: [], destNames: [],
+  costs: [], supply: [], demand: [],
+  // Balanced problem
+  bm: 0, bn: 0,
+  bOriginNames: [], bDestNames: [],
+  bCosts: [], bSupply: [], bDemand: [],
+  hadDummy: false, dummyType: null, dummyAmount: 0,
+  results: { vogel: null, eno: null, cm: null }
+};
+
+// ─────────────────────────────────────────
+// EXAMPLES
+// ─────────────────────────────────────────
+function loadExample(n) {
+  if (n === 1) {
+    document.getElementById('inp-m').value = 2;
+    document.getElementById('inp-n').value = 3;
+    document.getElementById('inp-origins').value = 'Inglaterra, Alemania';
+    document.getElementById('inp-dests').value = 'R1, R2, R3';
+    generateTable();
+    // Fill costs
+    const costs = [[12,7,10],[8,11,9]];
+    const supply = [7200, 5300];
+    const demand = [5500, 3500, 3500];
+    for (let i = 0; i < 2; i++)
+      for (let j = 0; j < 3; j++)
+        getCell('c', i, j).value = costs[i][j];
+    for (let i = 0; i < 2; i++) getCell('s', i).value = supply[i];
+    for (let j = 0; j < 3; j++) getCell('d', j).value = demand[j];
+    updateBalance();
+  } else {
+    document.getElementById('inp-m').value = 4;
+    document.getElementById('inp-n').value = 5;
+    document.getElementById('inp-origins').value = 'Almacén 1, Almacén 2, Almacén 3, Almacén 4';
+    document.getElementById('inp-dests').value = 'T1, T2, T3, T4, T5';
+    generateTable();
+    const costs = [
+      [10,16,12,10,14],[16,10,12,10,12],
+      [14,12,16,16,12],[12,10,12,16,14]
+    ];
+    const supply = [7, 8, 8, 4];
+    const demand = [12, 3, 2, 6, 9];
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 5; j++)
+        getCell('c', i, j).value = costs[i][j];
+    for (let i = 0; i < 4; i++) getCell('s', i).value = supply[i];
+    for (let j = 0; j < 5; j++) getCell('d', j).value = demand[j];
+    updateBalance();
+  }
+}
+
+function getCell(type, i, j) {
+  if (type === 'c') return document.getElementById(`c_${i}_${j}`);
+  if (type === 's') return document.getElementById(`s_${i}`);
+  if (type === 'd') return document.getElementById(`d_${j}`);
+}
+
+// ─────────────────────────────────────────
+// GENERATE TABLE
+// ─────────────────────────────────────────
+function generateTable() {
+  const m = parseInt(document.getElementById('inp-m').value);
+  const n = parseInt(document.getElementById('inp-n').value);
+  if (isNaN(m) || m < 1 || m > 10 || isNaN(n) || n < 1 || n > 10) {
+    alert('El número de orígenes y destinos debe estar entre 1 y 10.');
+    return;
+  }
+
+  const rawOrigins = document.getElementById('inp-origins').value;
+  const rawDests = document.getElementById('inp-dests').value;
+  const origins = parseNames(rawOrigins, m, 'Origen');
+  const dests = parseNames(rawDests, n, 'Destino');
+
+  let html = '<table class="input-table">';
+  // Header row
+  html += '<tr><th style="background:#060B17"></th>';
+  for (let j = 0; j < n; j++) html += `<th>${escHtml(dests[j])}</th>`;
+  html += '<th class="supply-h" style="color:var(--green)">Oferta</th></tr>';
+
+  // Data rows
+  for (let i = 0; i < m; i++) {
+    html += `<tr><th style="text-align:left;padding:6px 10px">${escHtml(origins[i])}</th>`;
+    for (let j = 0; j < n; j++) {
+      html += `<td><input type="number" id="c_${i}_${j}" min="0" step="any" placeholder="0" oninput="updateBalance()"></td>`;
+    }
+    html += `<td class="supply-td"><input type="number" id="s_${i}" min="0" step="any" placeholder="0" oninput="updateBalance()"></td>`;
+    html += '</tr>';
+  }
+
+  // Demand row
+  html += '<tr><th style="text-align:left;padding:6px 10px;color:var(--cyan)">Demanda</th>';
+  for (let j = 0; j < n; j++) {
+    html += `<td class="demand-td"><input type="number" id="d_${j}" min="0" step="any" placeholder="0" oninput="updateBalance()"></td>`;
+  }
+  html += '<td style="background:#060B17"></td></tr>';
+  html += '</table>';
+
+  document.getElementById('table-container').innerHTML = html;
+  document.getElementById('card-step2').style.display = 'block';
+  document.getElementById('card-step3').style.display = 'none';
+  document.getElementById('export-btn-wrapper').style.display = 'none';
+  updateBalance();
+  document.getElementById('card-step2').scrollIntoView({ behavior: 'smooth' });
+}
+
+function parseNames(raw, count, prefix) {
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(parts[i] || `${prefix} ${i+1}`);
+  }
+  return result;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─────────────────────────────────────────
+// BALANCE INDICATOR
+// ─────────────────────────────────────────
+function updateBalance() {
+  const m = parseInt(document.getElementById('inp-m').value);
+  const n = parseInt(document.getElementById('inp-n').value);
+  let totalS = 0, totalD = 0;
+  for (let i = 0; i < m; i++) {
+    const v = parseFloat(document.getElementById(`s_${i}`)?.value) || 0;
+    totalS += v;
+  }
+  for (let j = 0; j < n; j++) {
+    const v = parseFloat(document.getElementById(`d_${j}`)?.value) || 0;
+    totalD += v;
+  }
+  const ind = document.getElementById('balance-indicator');
+  const diff = Math.abs(totalS - totalD);
+  if (totalS === 0 && totalD === 0) {
+    ind.className = 'balance-indicator balance-warn';
+    ind.textContent = 'Ingresa las ofertas y demandas.';
+    return;
+  }
+  if (Math.abs(totalS - totalD) < 1e-9) {
+    ind.className = 'balance-indicator balance-ok';
+    ind.innerHTML = `✓ BALANCEADO &nbsp;|&nbsp; Oferta total: <strong>${fmt(totalS)}</strong> &nbsp;|&nbsp; Demanda total: <strong>${fmt(totalD)}</strong>`;
+  } else {
+    ind.className = 'balance-indicator balance-warn';
+    const who = totalS > totalD ? 'Destino Dummy' : 'Origen Dummy';
+    ind.innerHTML = `⚠ DESBALANCEADO &nbsp;|&nbsp; Oferta: <strong>${fmt(totalS)}</strong> &nbsp;|&nbsp; Demanda: <strong>${fmt(totalD)}</strong> &nbsp;|&nbsp; Diferencia: ${fmt(diff)} → Se agregará ${who}`;
+  }
+}
+
+// ─────────────────────────────────────────
+// VALIDATE & READ INPUTS
+// ─────────────────────────────────────────
+function readInputs() {
+  const m = parseInt(document.getElementById('inp-m').value);
+  const n = parseInt(document.getElementById('inp-n').value);
+  const rawOrigins = document.getElementById('inp-origins').value;
+  const rawDests = document.getElementById('inp-dests').value;
+  const origins = parseNames(rawOrigins, m, 'Origen');
+  const dests = parseNames(rawDests, n, 'Destino');
+
+  const costs = [], supply = [], demand = [];
+  for (let i = 0; i < m; i++) {
+    costs.push([]);
+    for (let j = 0; j < n; j++) {
+      const v = document.getElementById(`c_${i}_${j}`)?.value;
+      if (v === '' || v === null || v === undefined) return { error: `Costo (${origins[i]}, ${dests[j]}) está vacío.` };
+      const num = parseFloat(v);
+      if (isNaN(num) || num < 0) return { error: `Costo (${origins[i]}, ${dests[j]}) debe ser un número ≥ 0.` };
+      costs[i].push(num);
+    }
+    const sv = document.getElementById(`s_${i}`)?.value;
+    if (sv === '' || sv === null) return { error: `Oferta de ${origins[i]} está vacía.` };
+    const snum = parseFloat(sv);
+    if (isNaN(snum) || snum < 0) return { error: `Oferta de ${origins[i]} debe ser ≥ 0.` };
+    supply.push(snum);
+  }
+  for (let j = 0; j < n; j++) {
+    const dv = document.getElementById(`d_${j}`)?.value;
+    if (dv === '' || dv === null) return { error: `Demanda de ${dests[j]} está vacía.` };
+    const dnum = parseFloat(dv);
+    if (isNaN(dnum) || dnum < 0) return { error: `Demanda de ${dests[j]} debe ser ≥ 0.` };
+    demand.push(dnum);
+  }
+  return { m, n, origins, dests, costs, supply, demand };
+}
+
+// ─────────────────────────────────────────
+// SOLVE
+// ─────────────────────────────────────────
+function solve() {
+  const inp = readInputs();
+  if (inp.error) { alert(inp.error); return; }
+
+  const { m, n, origins, dests, costs, supply, demand } = inp;
+
+  // Balance
+  let bm = m, bn = n;
+  let bOrigins = origins.slice(), bDests = dests.slice();
+  let bCosts = costs.map(r => r.slice());
+  let bSupply = supply.slice(), bDemand = demand.slice();
+  let hadDummy = false, dummyType = null, dummyAmount = 0;
+
+  const totalS = bSupply.reduce((a,b) => a+b, 0);
+  const totalD = bDemand.reduce((a,b) => a+b, 0);
+
+  if (Math.abs(totalS - totalD) > 1e-9) {
+    hadDummy = true;
+    if (totalS > totalD) {
+      dummyType = 'destino';
+      dummyAmount = totalS - totalD;
+      bDests.push('Destino Dummy');
+      bDemand.push(dummyAmount);
+      for (let i = 0; i < bm; i++) bCosts[i].push(0);
+      bn++;
+    } else {
+      dummyType = 'origen';
+      dummyAmount = totalD - totalS;
+      bOrigins.push('Origen Dummy');
+      bSupply.push(dummyAmount);
+      bCosts.push(new Array(bn).fill(0));
+      bm++;
+    }
+  }
+
+  // Save to state
+  Object.assign(state, { m, n, originNames: origins, destNames: dests, costs, supply, demand,
+    bm, bn, bOriginNames: bOrigins, bDestNames: bDests, bCosts, bSupply, bDemand,
+    hadDummy, dummyType, dummyAmount });
+
+  // Run methods
+  state.results.vogel = solveVogel(bCosts, bSupply, bDemand);
+  state.results.eno   = solveENO(bCosts, bSupply, bDemand);
+  state.results.cm    = solveCM(bCosts, bSupply, bDemand);
+
+  displayResults();
+}
+
+// ─────────────────────────────────────────
+// ALGORITHMS
+// ─────────────────────────────────────────
+
+function solveVogel(costs, supply, demand) {
+  const m = supply.length, n = demand.length;
+  const s = supply.slice(), d = demand.slice();
+  const assignment = Array.from({length: m}, () => new Array(n).fill(0));
+  const iterations = [];
+
+  while (s.some(x => x > 1e-9) && d.some(x => x > 1e-9)) {
+    const supplyBefore = s.slice();
+    const demandBefore = d.slice();
+
+    // Row penalties
+    const rowPen = new Array(m).fill(null);
+    for (let i = 0; i < m; i++) {
+      if (s[i] < 1e-9) continue;
+      const active = [];
+      for (let j = 0; j < n; j++) if (d[j] > 1e-9) active.push(costs[i][j]);
+      if (!active.length) continue;
+      active.sort((a, b) => a - b);
+      rowPen[i] = active.length >= 2 ? active[1] - active[0] : active[0];
+    }
+
+    // Col penalties
+    const colPen = new Array(n).fill(null);
+    for (let j = 0; j < n; j++) {
+      if (d[j] < 1e-9) continue;
+      const active = [];
+      for (let i = 0; i < m; i++) if (s[i] > 1e-9) active.push(costs[i][j]);
+      if (!active.length) continue;
+      active.sort((a, b) => a - b);
+      colPen[j] = active.length >= 2 ? active[1] - active[0] : active[0];
+    }
+
+    // Max penalty (rows first for ties)
+    let maxPen = -1, penType = null, penIdx = -1;
+    for (let i = 0; i < m; i++) {
+      if (rowPen[i] !== null && rowPen[i] > maxPen + 1e-9) {
+        maxPen = rowPen[i]; penType = 'row'; penIdx = i;
+      }
+    }
+    for (let j = 0; j < n; j++) {
+      if (colPen[j] !== null && colPen[j] > maxPen + 1e-9) {
+        maxPen = colPen[j]; penType = 'col'; penIdx = j;
+      }
+    }
+    if (penType === null) break;
+
+    // Min cost cell in selected row/col
+    let ci = -1, cj = -1, minCost = Infinity;
+    if (penType === 'row') {
+      for (let j = 0; j < n; j++) {
+        if (d[j] > 1e-9 && costs[penIdx][j] < minCost - 1e-9) {
+          minCost = costs[penIdx][j]; ci = penIdx; cj = j;
+        }
+      }
+    } else {
+      for (let i = 0; i < m; i++) {
+        if (s[i] > 1e-9 && costs[i][penIdx] < minCost - 1e-9) {
+          minCost = costs[i][penIdx]; ci = i; cj = penIdx;
+        }
+      }
+    }
+    if (ci < 0) break;
+
+    const qty = Math.min(s[ci], d[cj]);
+    iterations.push({ iterNum: iterations.length + 1, supplyBefore, demandBefore,
+      rowPen: rowPen.slice(), colPen: colPen.slice(),
+      penType, penIdx, ci, cj, qty, cost: costs[ci][cj] });
+
+    assignment[ci][cj] += qty;
+    s[ci] -= qty; if (s[ci] < 1e-9) s[ci] = 0;
+    d[cj] -= qty; if (d[cj] < 1e-9) d[cj] = 0;
+  }
+
+  let totalCost = 0;
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      totalCost += assignment[i][j] * costs[i][j];
+
+  return { assignment, iterations, totalCost };
+}
+
+function solveENO(costs, supply, demand) {
+  const m = supply.length, n = demand.length;
+  const s = supply.slice(), d = demand.slice();
+  const assignment = Array.from({length: m}, () => new Array(n).fill(0));
+  const steps = [];
+  let i = 0, j = 0;
+
+  while (i < m && j < n) {
+    const qty = Math.min(s[i], d[j]);
+    assignment[i][j] += qty;
+    s[i] -= qty; d[j] -= qty;
+    if (s[i] < 1e-9) s[i] = 0;
+    if (d[j] < 1e-9) d[j] = 0;
+
+    steps.push({ step: steps.length + 1, i, j, qty,
+      supplyAfter: s[i], demandAfter: d[j] });
+
+    const exhaustedI = s[i] < 1e-9;
+    const exhaustedJ = d[j] < 1e-9;
+    if (exhaustedI && exhaustedJ) { i++; j++; }
+    else if (exhaustedI) i++;
+    else j++;
+  }
+
+  let totalCost = 0;
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      totalCost += assignment[i][j] * costs[i][j];
+
+  return { assignment, steps, totalCost };
+}
+
+function solveCM(costs, supply, demand) {
+  const m = supply.length, n = demand.length;
+  const s = supply.slice(), d = demand.slice();
+  const assignment = Array.from({length: m}, () => new Array(n).fill(0));
+  const steps = [];
+
+  while (s.some(x => x > 1e-9) && d.some(x => x > 1e-9)) {
+    let minCost = Infinity, bestQty = -1, ci = -1, cj = -1;
+    for (let i = 0; i < m; i++) {
+      if (s[i] < 1e-9) continue;
+      for (let j = 0; j < n; j++) {
+        if (d[j] < 1e-9) continue;
+        const c = costs[i][j];
+        const q = Math.min(s[i], d[j]);
+        if (c < minCost - 1e-9 || (Math.abs(c - minCost) < 1e-9 && q > bestQty)) {
+          minCost = c; bestQty = q; ci = i; cj = j;
+        }
+      }
+    }
+    if (ci < 0) break;
+
+    const qty = Math.min(s[ci], d[cj]);
+    assignment[ci][cj] += qty;
+    s[ci] -= qty; if (s[ci] < 1e-9) s[ci] = 0;
+    d[cj] -= qty; if (d[cj] < 1e-9) d[cj] = 0;
+
+    steps.push({ step: steps.length + 1, i: ci, j: cj, qty, cost: minCost,
+      supplyAfter: s[ci], demandAfter: d[cj] });
+  }
+
+  let totalCost = 0;
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      totalCost += assignment[i][j] * costs[i][j];
+
+  return { assignment, steps, totalCost };
+}
+
+// ─────────────────────────────────────────
+// DISPLAY RESULTS
+// ─────────────────────────────────────────
+function displayResults() {
+  const s = state;
+  document.getElementById('card-step3').style.display = 'block';
+
+  // Balance note
+  const bn = document.getElementById('balance-note');
+  if (s.hadDummy) {
+    bn.style.display = 'block';
+    bn.className = 'info-box info-orange';
+    const who = s.dummyType === 'destino' ? 'Destino Dummy' : 'Origen Dummy';
+    bn.innerHTML = `⚠ Se agregó <strong>${who}</strong> con ${s.dummyType === 'destino' ? 'demanda' : 'oferta'} de <strong>${fmt(s.dummyAmount)}</strong> unidades y costos = 0 para balancear el problema.`;
+  } else {
+    bn.style.display = 'none';
+  }
+
+  displayVogel();
+  displayENO();
+  displayCM();
+  displayComparison();
+
+  switchTab('vogel');
+  document.getElementById('export-btn-wrapper').style.display = 'block';
+  document.getElementById('card-step3').scrollIntoView({ behavior: 'smooth' });
+}
+
+function switchTab(tab) {
+  ['vogel','eno','cm','comp'].forEach(t => {
+    document.getElementById(`tab-content-${t}`).classList.remove('active');
+    document.getElementById(`tab-${t}`).className = 'tab-btn';
+  });
+  document.getElementById(`tab-content-${tab}`).classList.add('active');
+  document.getElementById(`tab-${tab}`).className = `tab-btn active-${tab}`;
+}
+
+// ─── VOGEL ───
+function displayVogel() {
+  const r = state.results.vogel;
+  const { bm, bn, bOriginNames: origins, bDestNames: dests, bCosts: costs } = state;
+  const isDummyRow = state.hadDummy && state.dummyType === 'origen';
+  const isDummyCol = state.hadDummy && state.dummyType === 'destino';
+
+  let html = '';
+
+  // Legend
+  html += `<div class="legend">
+    <div class="legend-item"><div class="legend-box" style="background:rgba(255,215,0,0.25);border:1px solid #8B7000"></div><span style="color:var(--text-dim)">Fila/Col con max penalización</span></div>
+    <div class="legend-item"><div class="legend-box" style="background:rgba(0,255,136,0.2);border:1px solid var(--green)"></div><span style="color:var(--text-dim)">Celda elegida</span></div>
+    <div class="legend-item"><div class="legend-box" style="background:rgba(255,140,0,0.15);border:1px solid var(--orange)"></div><span style="color:var(--text-dim)">Penalización</span></div>
+    <div class="legend-item"><div class="legend-box" style="background:#0A0F18;border:1px solid #2A3A50"></div><span style="color:var(--text-dim)">Inactivo</span></div>
+  </div>`;
+
+  html += `<p class="section-sub">Iteraciones (${r.iterations.length} pasos)</p>`;
+
+  // Iterations
+  r.iterations.forEach(iter => {
+    const { iterNum, supplyBefore, demandBefore, rowPen, colPen, penType, penIdx, ci, cj, qty, cost } = iter;
+    const penLabel = penType === 'row' ? `Fila "${origins[penIdx]}"` : `Columna "${dests[penIdx]}"`;
+
+    html += `<details class="iter-card" ${iterNum <= 3 ? 'open' : ''}>
+      <summary class="iter-header iter-toggle">
+        <span class="iter-num">ITERACIÓN ${iterNum}</span>
+        <span class="iter-info">Penalización max: <strong style="color:var(--yellow)">${fmt(penType==='row'?rowPen[penIdx]:colPen[penIdx])}</strong> en ${penLabel} → Celda elegida: (<strong>${origins[ci]}</strong>, <strong>${dests[cj]}</strong>) con costo $${fmt(cost)} → Asignar <strong style="color:var(--green)">${fmt(qty)}</strong> unidades</span>
+      </summary>
+      <div class="iter-body">
+        <div class="table-scroll">`;
+
+    // Build the iteration table
+    html += '<table class="iter-table">';
+
+    // Header row: empty, dest names, "Pen. F."
+    html += '<tr><th></th>';
+    for (let j = 0; j < bn; j++) {
+      const inactive = demandBefore[j] < 1e-9;
+      html += `<th class="${inactive ? 'inactive' : ''}" ${isDummyCol && j===bn-1 ? 'style="font-style:italic;opacity:0.6"' : ''}>${escHtml(dests[j])}</th>`;
+    }
+    html += '<th class="penalty-row" style="color:var(--orange)">Pen. Fila</th>';
+    html += '<th class="supply-h" style="color:var(--green);font-size:9px">Oferta</th>';
+    html += '</tr>';
+
+    // Data rows
+    for (let i = 0; i < bm; i++) {
+      const rowInactive = supplyBefore[i] < 1e-9;
+      const isSelectedRow = penType === 'row' && penIdx === i;
+      const rowIsDummy = isDummyRow && i === bm - 1;
+      html += `<tr ${rowIsDummy ? 'class="dummy-row"' : ''}>`;
+      html += `<td class="origin-label ${rowInactive ? 'inactive' : ''}">${escHtml(origins[i])}</td>`;
+
+      for (let j = 0; j < bn; j++) {
+        const colInactive = demandBefore[j] < 1e-9;
+        const isSelectedCol = penType === 'col' && penIdx === j;
+        const inactive = rowInactive || colInactive;
+        const isChosen = i === ci && j === cj;
+        const colIsDummy = isDummyCol && j === bn - 1;
+
+        let cls = '';
+        if (inactive) cls = 'inactive';
+        else if (isChosen) cls = 'chosen';
+        else if (isSelectedRow || isSelectedCol) cls = penType === 'row' ? 'selected-row' : 'selected-col';
+        if (colIsDummy && !inactive) cls += ' dummy-col';
+
+        html += `<td class="${cls}">${inactive ? '<s>' + fmt(costs[i][j]) + '</s>' : fmt(costs[i][j])}</td>`;
+      }
+
+      // Row penalty
+      if (rowInactive || rowPen[i] === null) {
+        html += `<td class="penalty-row" style="color:var(--text-dim)">—</td>`;
+      } else {
+        const isMaxPen = penType === 'row' && penIdx === i;
+        html += `<td class="penalty-row${isMaxPen ? ' max-penalty' : ''}">${isMaxPen ? '★ ' : ''}${fmt(rowPen[i])}</td>`;
+      }
+
+      // Supply
+      html += `<td class="supply-val">${fmt(supplyBefore[i])}</td>`;
+      html += '</tr>';
+    }
+
+    // Column penalty row
+    html += '<tr><td class="origin-label" style="color:var(--orange);font-size:10px">Pen. Col.</td>';
+    for (let j = 0; j < bn; j++) {
+      const inactive = demandBefore[j] < 1e-9;
+      if (inactive || colPen[j] === null) {
+        html += `<td class="penalty-col" style="color:var(--text-dim)">—</td>`;
+      } else {
+        const isMaxPen = penType === 'col' && penIdx === j;
+        html += `<td class="penalty-col${isMaxPen ? ' max-penalty' : ''}">${isMaxPen ? '★ ' : ''}${fmt(colPen[j])}</td>`;
+      }
+    }
+    html += '<td></td><td></td></tr>';
+
+    // Demand row
+    html += '<tr><td class="origin-label demand-h" style="color:var(--cyan);font-size:10px">Demanda</td>';
+    for (let j = 0; j < bn; j++) {
+      html += `<td class="demand-val">${fmt(demandBefore[j])}</td>`;
+    }
+    html += '<td></td><td></td></tr>';
+
+    html += '</table></div></div></details>';
+  });
+
+  html += '<hr class="divider">';
+
+  // Final assignment table
+  html += `<p class="section-sub">Tabla Final de Asignaciones</p>`;
+  html += renderAssignmentTable(r.assignment, origins, dests, isDummyRow, isDummyCol);
+
+  html += '<hr class="divider">';
+
+  // Summary
+  html += `<p class="section-sub">Resumen de Asignaciones</p>`;
+  html += renderSummaryTable(r.assignment, origins, dests, costs, isDummyRow, isDummyCol);
+
+  html += renderTotalCost(r.totalCost);
+
+  document.getElementById('vogel-content').innerHTML = html;
+}
+
+// ─── ENO ───
+function displayENO() {
+  const r = state.results.eno;
+  const { bm, bn, bOriginNames: origins, bDestNames: dests, bCosts: costs } = state;
+  const isDummyRow = state.hadDummy && state.dummyType === 'origen';
+  const isDummyCol = state.hadDummy && state.dummyType === 'destino';
+
+  let html = '';
+
+  html += `<p class="section-sub">Pasos del Algoritmo</p>`;
+  html += '<ul class="steps-list">';
+  r.steps.forEach(step => {
+    html += `<li>
+      <span class="step-n">PASO ${step.step}</span>
+      <span>Celda <strong>(${escHtml(origins[step.i])}, ${escHtml(dests[step.j])})</strong>: asignar min(oferta, demanda) = <strong style="color:var(--green)">${fmt(step.qty)}</strong> | Oferta restante: ${fmt(step.supplyAfter)} | Demanda restante: ${fmt(step.demandAfter)}</span>
+    </li>`;
+  });
+  html += '</ul><hr class="divider">';
+
+  html += `<p class="section-sub">Tabla Final de Asignaciones</p>`;
+  html += renderAssignmentTable(r.assignment, origins, dests, isDummyRow, isDummyCol);
+  html += '<hr class="divider">';
+
+  html += `<p class="section-sub">Resumen de Asignaciones</p>`;
+  html += renderSummaryTable(r.assignment, origins, dests, costs, isDummyRow, isDummyCol);
+  html += renderTotalCost(r.totalCost);
+
+  document.getElementById('eno-content').innerHTML = html;
+}
+
+// ─── CM ───
+function displayCM() {
+  const r = state.results.cm;
+  const { bm, bn, bOriginNames: origins, bDestNames: dests, bCosts: costs } = state;
+  const isDummyRow = state.hadDummy && state.dummyType === 'origen';
+  const isDummyCol = state.hadDummy && state.dummyType === 'destino';
+
+  let html = '';
+
+  html += `<p class="section-sub">Pasos del Algoritmo</p>`;
+  html += '<ul class="steps-list">';
+  r.steps.forEach(step => {
+    html += `<li>
+      <span class="step-n">PASO ${step.step}</span>
+      <span>Costo mínimo = <strong>$${fmt(step.cost)}</strong> en <strong>(${escHtml(origins[step.i])}, ${escHtml(dests[step.j])})</strong>: asignar <strong style="color:var(--green)">${fmt(step.qty)}</strong> | Oferta restante: ${fmt(step.supplyAfter)} | Demanda restante: ${fmt(step.demandAfter)}</span>
+    </li>`;
+  });
+  html += '</ul><hr class="divider">';
+
+  html += `<p class="section-sub">Tabla Final de Asignaciones</p>`;
+  html += renderAssignmentTable(r.assignment, origins, dests, isDummyRow, isDummyCol);
+  html += '<hr class="divider">';
+
+  html += `<p class="section-sub">Resumen de Asignaciones</p>`;
+  html += renderSummaryTable(r.assignment, origins, dests, costs, isDummyRow, isDummyCol);
+  html += renderTotalCost(r.totalCost);
+
+  document.getElementById('cm-content').innerHTML = html;
+}
+
+// ─── COMPARISON ───
+function displayComparison() {
+  const { vogel, eno, cm } = state.results;
+  const costs = [
+    { name: 'Vogel', cost: vogel.totalCost, color: 'var(--orange)', cls: 'vogel-h' },
+    { name: 'Esquina Noroeste', cost: eno.totalCost, color: 'var(--red)', cls: 'eno-h' },
+    { name: 'Costo Mínimo', cost: cm.totalCost, color: 'var(--green)', cls: 'cm-h' }
+  ];
+  const minCost = Math.min(...costs.map(c => c.cost));
+  const bestMethods = costs.filter(c => Math.abs(c.cost - minCost) < 1e-9);
+
+  let html = '<div class="table-scroll"><table class="comp-table">';
+  html += '<tr><th></th>';
+  costs.forEach(c => html += `<th class="${c.cls}">${c.name}</th>`);
+  html += '</tr>';
+  html += '<tr><td style="color:var(--text-dim);text-align:left">Costo Total</td>';
+  costs.forEach(c => {
+    const isBest = Math.abs(c.cost - minCost) < 1e-9;
+    html += `<td class="${isBest ? 'best' : 'cost'}" style="${!isBest ? 'color:'+c.color : ''}">$${fmt(c.cost)}${isBest ? ' ★' : ''}</td>`;
+  });
+  html += '</tr></table></div>';
+
+  html += `<div class="conclusion-box good" style="margin-top:20px">
+    <div class="conclusion-text">`;
+  if (bestMethods.length === 1) {
+    html += `El método <strong>${bestMethods[0].name}</strong> obtuvo la mejor solución inicial con costo <strong>$${fmt(minCost)}</strong>.`;
+  } else {
+    const names = bestMethods.map(m => `<strong>${m.name}</strong>`).join(' y ');
+    html += `Los métodos ${names} obtuvieron la mejor solución con costo <strong>$${fmt(minCost)}</strong>.`;
+  }
+  html += `<br><small style="color:var(--text-dim);font-size:11px;margin-top:6px;display:block">* Esta es la solución básica factible inicial. Para la solución óptima se requiere el método Simplex / MODI.</small>`;
+  html += '</div></div>';
+
+  document.getElementById('comp-content').innerHTML = html;
+}
+
+// ─────────────────────────────────────────
+// RENDER HELPERS
+// ─────────────────────────────────────────
+function renderAssignmentTable(assignment, origins, dests, isDummyRow, isDummyCol) {
+  const m = origins.length, n = dests.length;
+  let html = '<div class="table-scroll"><table class="result-table">';
+  html += '<tr><th></th>';
+  for (let j = 0; j < n; j++) {
+    const isDummy = isDummyCol && j === n-1;
+    html += `<th ${isDummy ? 'style="opacity:0.6;font-style:italic"' : ''}>${escHtml(dests[j])}</th>`;
+  }
+  html += '<th class="supply-h" style="color:var(--green)">Oferta</th></tr>';
+
+  for (let i = 0; i < m; i++) {
+    const rowIsDummy = isDummyRow && i === m-1;
+    const rowSupply = assignment[i].reduce((a,b)=>a+b,0);
+    html += `<tr ${rowIsDummy ? 'class="dummy-row"' : ''}>`;
+    html += `<td class="origin-label">${escHtml(origins[i])}</td>`;
+    for (let j = 0; j < n; j++) {
+      const colIsDummy = isDummyCol && j === n-1;
+      const v = assignment[i][j];
+      html += `<td class="${v > 1e-9 ? 'assigned' : 'zero'}${colIsDummy ? ' dummy' : ''}">${v > 1e-9 ? fmt(v) : '—'}</td>`;
+    }
+    html += `<td class="supply-val" style="color:var(--green)">${fmt(rowSupply)}</td>`;
+    html += '</tr>';
+  }
+  // Demand row
+  html += '<tr><td class="origin-label" style="color:var(--cyan);font-size:11px">Demanda</td>';
+  for (let j = 0; j < n; j++) {
+    const colTotal = assignment.reduce((a,row)=>a+row[j],0);
+    html += `<td class="demand-val" style="color:var(--cyan)">${fmt(colTotal)}</td>`;
+  }
+  html += '<td></td></tr>';
+  html += '</table></div>';
+  return html;
+}
+
+function renderSummaryTable(assignment, origins, dests, costs, isDummyRow, isDummyCol) {
+  const m = origins.length, n = dests.length;
+  let html = '<div class="table-scroll"><table class="summary-table">';
+  html += '<tr><th>Origen</th><th>Destino</th><th>Cantidad</th><th>Costo Unitario</th><th>Costo Total</th></tr>';
+
+  let grandTotal = 0;
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      if (assignment[i][j] < 1e-9) continue;
+      const qty = assignment[i][j];
+      const c = costs[i][j];
+      const total = qty * c;
+      grandTotal += total;
+      const rowDummy = isDummyRow && i === m-1;
+      const colDummy = isDummyCol && j === n-1;
+      html += `<tr ${(rowDummy||colDummy) ? 'class="dummy-row"' : ''}>
+        <td>${escHtml(origins[i])}</td>
+        <td>${escHtml(dests[j])}</td>
+        <td style="color:var(--green)">${fmt(qty)}</td>
+        <td>$${fmt(c)}</td>
+        <td style="color:var(--yellow)">$${fmt(total)}</td>
+      </tr>`;
+    }
+  }
+  html += `<tr class="total-row">
+    <td colspan="4" style="text-align:right;color:var(--text-dim)">COSTO TOTAL</td>
+    <td>$${fmt(grandTotal)}</td>
+  </tr>`;
+  html += '</table></div>';
+  return html;
+}
+
+function renderTotalCost(cost) {
+  return `<div class="total-cost-box">
+    <div class="label">COSTO TOTAL DE TRANSPORTE</div>
+    <div class="value">$${fmt(cost)}</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────
+// EXCEL EXPORT
+// ─────────────────────────────────────────
+function exportToExcel() {
+  if (!state.results.vogel) { alert('Primero resuelve el problema.'); return; }
+  if (typeof XLSX === 'undefined') { alert('SheetJS no cargó. Verifica tu conexión a internet.'); return; }
+
+  const wb = XLSX.utils.book_new();
+  const { m, n, originNames, destNames, costs, supply, demand,
+    bm, bn, bOriginNames, bDestNames, bCosts, bSupply, bDemand,
+    hadDummy, dummyType, dummyAmount, results } = state;
+
+  // ── Sheet 1: Datos ──
+  const ws1Data = [];
+  ws1Data.push(['PROBLEMA DE TRANSPORTE — NEXTECH INDUSTRIES']);
+  ws1Data.push(['Orígenes:', m, 'Destinos:', n]);
+  ws1Data.push([]);
+  ws1Data.push(['TABLA DE COSTOS ORIGINALES']);
+
+  const hdr1 = [''].concat(destNames).concat(['Oferta']);
+  ws1Data.push(hdr1);
+  for (let i = 0; i < m; i++) {
+    ws1Data.push([originNames[i]].concat(costs[i]).concat([supply[i]]));
+  }
+  ws1Data.push(['Demanda'].concat(demand));
+
+  ws1Data.push([]);
+  const totalS = supply.reduce((a,b)=>a+b,0);
+  const totalD = demand.reduce((a,b)=>a+b,0);
+  ws1Data.push(['Total Oferta:', totalS, 'Total Demanda:', totalD]);
+  ws1Data.push([Math.abs(totalS-totalD) < 1e-9 ? 'BALANCEADO ✓' : `DESBALANCEADO — diferencia: ${totalD-totalS}`]);
+
+  if (hadDummy) {
+    ws1Data.push([]);
+    ws1Data.push([`Se agregó ${dummyType === 'destino' ? 'Destino Dummy' : 'Origen Dummy'} con ${dummyAmount} unidades para balancear.`]);
+    ws1Data.push([]);
+    ws1Data.push(['TABLA BALANCEADA']);
+    const hdrB = [''].concat(bDestNames).concat(['Oferta']);
+    ws1Data.push(hdrB);
+    for (let i = 0; i < bm; i++) {
+      ws1Data.push([bOriginNames[i]].concat(bCosts[i]).concat([bSupply[i]]));
+    }
+    ws1Data.push(['Demanda'].concat(bDemand));
+  }
+
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols'] = autoColWidths(ws1Data);
+  styleHeaderRows(ws1, ws1Data);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Datos del Problema');
+
+  // ── Sheet 2: Vogel ──
+  const ws2Data = buildMethodSheet('Vogel', results.vogel, bOriginNames, bDestNames, bCosts, state);
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
+  ws2['!cols'] = autoColWidths(ws2Data);
+  applyAssignmentColors(ws2, ws2Data);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Vogel');
+
+  // ── Sheet 3: ENO ──
+  const ws3Data = buildMethodSheet('Esquina Noroeste (ENO)', results.eno, bOriginNames, bDestNames, bCosts, state);
+  const ws3 = XLSX.utils.aoa_to_sheet(ws3Data);
+  ws3['!cols'] = autoColWidths(ws3Data);
+  applyAssignmentColors(ws3, ws3Data);
+  XLSX.utils.book_append_sheet(wb, ws3, 'Esquina Noroeste');
+
+  // ── Sheet 4: CM ──
+  const ws4Data = buildMethodSheet('Costo Mínimo', results.cm, bOriginNames, bDestNames, bCosts, state);
+  const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+  ws4['!cols'] = autoColWidths(ws4Data);
+  applyAssignmentColors(ws4, ws4Data);
+  XLSX.utils.book_append_sheet(wb, ws4, 'Costo Mínimo');
+
+  // ── Sheet 5: Comparativa ──
+  const ws5Data = buildCompSheet(results, bOriginNames, bDestNames, bCosts);
+  const ws5 = XLSX.utils.aoa_to_sheet(ws5Data);
+  ws5['!cols'] = autoColWidths(ws5Data);
+  XLSX.utils.book_append_sheet(wb, ws5, 'Comparativa');
+
+  // Write
+  const now = new Date();
+  const pad = x => String(x).padStart(2,'0');
+  const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  XLSX.writeFile(wb, `NexTech_Transporte_${dateStr}.xlsx`);
+}
+
+function buildMethodSheet(methodName, result, origins, dests, costs, state) {
+  const { bm, bn } = state;
+  const { assignment, totalCost } = result;
+  const data = [];
+
+  data.push([`MÉTODO: ${methodName.toUpperCase()}`]);
+  data.push([]);
+
+  // Steps for ENO and CM
+  if (result.steps) {
+    data.push(['PASOS DEL ALGORITMO']);
+    result.steps.forEach(s => {
+      data.push([
+        `Paso ${s.step}:`,
+        `(${origins[s.i]}, ${dests[s.j]})`,
+        `Costo: $${s.cost !== undefined ? s.cost : ''}`,
+        `Cantidad: ${s.qty}`,
+        `Oferta rest.: ${s.supplyAfter}`,
+        `Demanda rest.: ${s.demandAfter}`
+      ]);
+    });
+    data.push([]);
+  }
+
+  // Vogel iterations summary
+  if (result.iterations) {
+    data.push(['RESUMEN DE ITERACIONES']);
+    data.push(['Iter.', 'Tipo Pen.', 'Fila/Col', 'Penalización', 'Celda Elegida', 'Cantidad', 'Costo Unit.']);
+    result.iterations.forEach(iter => {
+      const pen = iter.penType === 'row' ? iter.rowPen[iter.penIdx] : iter.colPen[iter.penIdx];
+      data.push([
+        iter.iterNum,
+        iter.penType === 'row' ? 'Fila' : 'Columna',
+        iter.penType === 'row' ? origins[iter.penIdx] : dests[iter.penIdx],
+        pen,
+        `(${origins[iter.ci]}, ${dests[iter.cj]})`,
+        iter.qty,
+        iter.cost
+      ]);
+    });
+    data.push([]);
+  }
+
+  // Final assignment table
+  data.push(['TABLA FINAL DE ASIGNACIONES']);
+  const hdr = [''].concat(dests).concat(['OFERTA']);
+  data.push(hdr);
+  for (let i = 0; i < bm; i++) {
+    const row = [origins[i]];
+    let rowTotal = 0;
+    for (let j = 0; j < bn; j++) {
+      row.push(assignment[i][j] > 1e-9 ? assignment[i][j] : 0);
+      rowTotal += assignment[i][j];
+    }
+    row.push(rowTotal);
+    data.push(row);
+  }
+  const demRow = ['DEMANDA'];
+  for (let j = 0; j < bn; j++) {
+    demRow.push(assignment.reduce((a,row)=>a+row[j],0));
+  }
+  demRow.push('');
+  data.push(demRow);
+  data.push([]);
+
+  // Summary
+  data.push(['RESUMEN']);
+  data.push(['Origen', 'Destino', 'Cantidad', 'Costo Unitario', 'Costo Total']);
+  for (let i = 0; i < bm; i++) {
+    for (let j = 0; j < bn; j++) {
+      if (assignment[i][j] < 1e-9) continue;
+      const qty = assignment[i][j];
+      const c = costs[i][j];
+      data.push([origins[i], dests[j], qty, c, qty * c]);
+    }
+  }
+  data.push(['', '', '', 'COSTO TOTAL:', totalCost]);
+
+  return data;
+}
+
+function buildCompSheet(results, origins, dests, costs) {
+  const data = [];
+  data.push(['COMPARATIVA DE MÉTODOS — NEXTECH INDUSTRIES']);
+  data.push([]);
+  data.push(['Método', 'Costo Total', 'Notas']);
+  const methods = [
+    { name: 'Vogel', cost: results.vogel.totalCost },
+    { name: 'Esquina Noroeste', cost: results.eno.totalCost },
+    { name: 'Costo Mínimo', cost: results.cm.totalCost }
+  ];
+  const minCost = Math.min(...methods.map(m => m.cost));
+  methods.forEach(m => {
+    data.push([m.name, m.cost, Math.abs(m.cost - minCost) < 1e-9 ? '★ MEJOR SOLUCIÓN' : '']);
+  });
+  data.push([]);
+  data.push(['Conclusión:']);
+  const bests = methods.filter(m => Math.abs(m.cost - minCost) < 1e-9);
+  data.push([`El método ${bests.map(m=>m.name).join(' y ')} obtuvo la mejor solución inicial con costo $${minCost}.`]);
+  data.push(['Nota: Esta es la solución básica factible inicial. Para la óptima se requiere el método MODI/Simplex.']);
+  return data;
+}
+
+// Simple Excel helpers
+function autoColWidths(data) {
+  const cols = [];
+  data.forEach(row => {
+    row.forEach((cell, j) => {
+      const len = String(cell === null || cell === undefined ? '' : cell).length;
+      cols[j] = Math.max(cols[j] || 8, Math.min(len + 2, 40));
+    });
+  });
+  return cols.map(w => ({ wch: w }));
+}
+
+function styleHeaderRows(ws, data) {
+  // Apply bold to first row
+  const ref = ws['!ref'];
+  if (!ref) return;
+  try {
+    const cell = ws['A1'];
+    if (cell) cell.s = { font: { bold: true, sz: 14 } };
+  } catch(e) {}
+}
+
+function applyAssignmentColors(ws, data) {
+  // Attempt to color header and total rows
+  try {
+    if (ws['A1']) ws['A1'].s = { font: { bold: true, sz: 13, color: { rgb: 'FF00D4FF' } } };
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (Number.isInteger(n)) return n.toLocaleString('es-MX');
+  return parseFloat(n.toFixed(4)).toLocaleString('es-MX');
+}
+
+function resetAll() {
+  document.getElementById('card-step2').style.display = 'none';
+  document.getElementById('card-step3').style.display = 'none';
+  document.getElementById('export-btn-wrapper').style.display = 'none';
+  document.getElementById('table-container').innerHTML = '';
+  state.results = { vogel: null, eno: null, cm: null };
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
